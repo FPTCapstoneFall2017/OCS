@@ -64,19 +64,13 @@ void callback ( char* topic, byte* payload, unsigned int length) {
   while ( i < length) {
     message += (char)payload[i++];
   }
-      client.publish(mqtt_topic_pub,"ok" );
+//      client.publish(mqtt_topic_pub,"ok" );
      Serial.print("Receive");
      Serial.println(message);
   
 }
 //---------------------------------SendMessage---------------------------------------------------
-void sendMes( String message) {
 
- if (client.connect("ESP8266Client", mqtt_user, mqtt_pass)) {
-  client.publish(mqtt_topic_pub,"ok" );
- }
-
-}
 //-----------------------------------Reconnect to mqtt server-------------------------------------------------
 void reconnect() {
   // Loop until we're reconnected
@@ -141,11 +135,12 @@ void loop() {
   client.loop();
 
   long now = millis();
-  if (now - lastMsg > 1000) {
+  if (now - lastMsg > 2000) {
     lastMsg = now;
 
-    Serial.println(msg);
-    client.publish(mqtt_topic_pub, msg);
+    
+      client.publish(mqtt_topic_pub,"ok" );
+
   }
 }
 
