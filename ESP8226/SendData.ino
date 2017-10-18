@@ -6,9 +6,12 @@
 #define ssid "P201"
 #define password "p@55w0rd15h4rd"
 #define mqtt_server "m13.cloudmqtt.com"
-#define mqtt_topic_pub "send"
+#define mqtt_topic_pub_temp "temp"
+#define mqtt_topic_pub_humi "humidity"
 #define mqtt_user "huynqse61525"
 #define mqtt_pass  "123"
+
+
 
 #define dataPin 4
 #define clockPin 5
@@ -16,8 +19,7 @@
 
 const uint16_t mqtt_port = 17373;
 
-float temp_c;
-float humidity;
+
 
 aREST rest = aREST();
 SHT1x sht1x(dataPin, clockPin);
@@ -64,12 +66,12 @@ void callback ( char* topic, byte* payload, unsigned int length) {
   while ( i < length) {
     message += (char)payload[i++];
   }
-//      client.publish(mqtt_topic_pub,"ok" );
-     Serial.print("Receive");
-     Serial.println(message);
-  
+
+  Serial.print("Receive");
+  Serial.println(message);
+
 }
-//---------------------------------SendMessage---------------------------------------------------
+
 
 //-----------------------------------Reconnect to mqtt server-------------------------------------------------
 void reconnect() {
@@ -80,9 +82,8 @@ void reconnect() {
     if (client.connect("ESP8266Client", mqtt_user, mqtt_pass)) {
       Serial.println("connected");
       // Once connected, publish an announcement...
-      client.publish(mqtt_topic_pub, "ESP_reconnected");
-      // ... and resubscribe
-      client.subscribe(mqtt_topic_pub);
+      client.publish(mqtt_topic_pub_temp, "ESP_reconnected temperature");
+       client.publish(mqtt_topic_pub_humi, "ESP_reconnected humidity");
     } else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
@@ -92,44 +93,31 @@ void reconnect() {
     }
   }
 }
-//---------------------------------------Get Tem + Humi---------------------------------------------
-//void getTemHum() {
-// temp_c = sht1x.readTemperatureC();
-////  humidity = sht1x.readHumidity();
-////
-////  Serial.print("Temperature: ");
-//  Serial.print(temp_c, DEC);
-////  Serial.print("C  ");
-////  Serial.print("     ");
-////  Serial.print("F. Humidity: ");
-////  Serial.print(humidity);
-//  Serial.println("%");
-////
-// //Wait 2 seconds
-//  delay(2000);
-////
-////
-////  // Handle REST calls
-//  WiFiClient client = server.available();
-//  if (!client) {
-//    return;
-//  }
-//  while (!client.available()) {
-//    delay(1);
-//  }
-//  rest.handle(client);
-//
-//}
+
+//---------------------------get tem---------------
+int getTemp() {
+  int temp_c;
+  temp_c = sht1x.readTemperatureC();
+
+  return temp_c;
+}
+//----------------------get humi--------------------------
+
+int getHum() {
+  int  humi;
+  humi = sht1x.readHumidity();
+
+  return humi;
+}
 //------------------------------------------------------------------------------------
 void loop() {
-
-  if (!client.connected()& WiFi.status()== WL_CONNECTED ) {
+  if (!client.connected()& WiFi.status() == WL_CONNECTED ) {
     reconnect();
   }
-  if (WiFi.status() != WL_CONNECTED){
+  if (WiFi.status() != WL_CONNECTED) {
     WiFi.begin(ssid, password);
-     Serial.print("WiFi connected");
-  Serial.print("IP address: ");
+    Serial.print("WiFi connected");
+    Serial.print("IP address: ");
   }
 
   client.loop();
@@ -137,9 +125,26 @@ void loop() {
   long now = millis();
   if (now - lastMsg > 2000) {
     lastMsg = now;
+    //-------- decode temp-------
+    String tempString = String(getTemp());
+    char charTemp[tempString.length()];
+    for (int i = 0; i < tempString.length(); i++) {
+      charTemp[i] = tempString.charAt(i);
+    }
+    //---------decode humi--------
+    String humString = String(getHum());
+    char charHum[humString.length()];
+//    for (int i = 0; i < humString.length(); i++) {
+//      charHum[i] = humString.charAt(i);
+//    }
 
-    
-      client.publish(mqtt_topic_pub,"ok" );
+
+    client.publish(mqtt_topic_pub_temp, charTemp);
+    client.publish(mqtt_topic_pub_humi, charHum);
+    Serial.println();
+    client.subscribe(mqtt_topic_pub_temp);
+    client.subscribe(mqtt_topic_pub_humi);
+
 
   }
 }
